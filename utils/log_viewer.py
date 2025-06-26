@@ -64,11 +64,11 @@ class LogViewer:
         
         return logs
     
-    def get_api_logs(self, lines: int = 50) -> List[Dict]:
+    def get_api_logs(self, lines: int = 5000) -> List[Dict]:
         """Get recent API logs."""
         return self.read_logs(self.api_log_file, lines)
     
-    def get_error_logs(self, lines: int = 50) -> List[Dict]:
+    def get_error_logs(self, lines: int = 5000) -> List[Dict]:
         """Get recent error logs."""
         return self.read_logs(self.error_log_file, lines)
     
