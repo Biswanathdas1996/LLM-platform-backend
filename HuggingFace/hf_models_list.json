@@ -1,0 +1,17 @@
+{
+  "models": [
+    {
+      "model_id": "microsoft/Phi-3-mini-4k-instruct-gguf",
+      "name": "Phi-3 Mini GGUF",
+      "model_type": "text-generation",
+      "description": "",
+      "parameters": {},
+      "added_date": "2025-06-27T10:54:39.007982",
+      "last_used": null,
+      "usage_count": 0,
+      "status": "available"
+    }
+  ],
+  "last_updated": "2025-06-27T10:54:39.007982",
+  "count": 1
+}

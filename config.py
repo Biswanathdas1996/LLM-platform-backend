@@ -20,6 +20,11 @@ class Config:
     ALLOWED_EXTENSIONS = {'gguf'}
     MAX_CONTENT_LENGTH = int(os.environ.get('MAX_CONTENT_LENGTH', 10 * 1024 * 1024 * 1024))
     
+    # HuggingFace settings
+    HF_FOLDER = os.environ.get('HF_FOLDER', './HuggingFace')
+    HF_MODELS_JSON_FILE = os.environ.get('HF_MODELS_JSON_FILE', './HuggingFace/hf_models_list.json')
+    HF_CACHE_DIR = os.environ.get('HF_CACHE_DIR', os.path.join(os.path.expanduser('~'), '.cache', 'huggingface'))
+    
     # LLM settings
     DEFAULT_N_GPU_LAYERS = int(os.environ.get('DEFAULT_N_GPU_LAYERS', 40))
     DEFAULT_N_BATCH = int(os.environ.get('DEFAULT_N_BATCH', 512))

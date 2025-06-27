@@ -1,0 +1,310 @@
+{
+  "info": {
+    "name": "HuggingFace Local LLM API",
+    "description": "Collection for testing HuggingFace model management and text generation APIs",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Model Management",
+      "item": [
+        {
+          "name": "List All Models",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/huggingface/models",
+              "host": ["{{base_url}}"],
+              "path": ["api", "huggingface", "models"]
+            }
+          }
+        },
+        {
+          "name": "Add GPT-2 Model",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"model_id\": \"gpt2\",\n  \"name\": \"GPT-2\",\n  \"model_type\": \"text-generation\",\n  \"description\": \"OpenAI GPT-2 language model\",\n  \"parameters\": {\n    \"max_new_tokens\": 50,\n    \"temperature\": 0.8,\n    \"do_sample\": true\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/huggingface/models",
+              "host": ["{{base_url}}"],
+              "path": ["api", "huggingface", "models"]
+            }
+          }
+        },
+        {
+          "name": "Add DialoGPT Model",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"model_id\": \"microsoft/DialoGPT-medium\",\n  \"name\": \"DialoGPT Medium\",\n  \"model_type\": \"conversational\",\n  \"description\": \"A conversational AI model trained on Reddit conversations\",\n  \"parameters\": {\n    \"max_new_tokens\": 100,\n    \"temperature\": 0.7,\n    \"do_sample\": true,\n    \"top_p\": 0.9\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/huggingface/models",
+              "host": ["{{base_url}}"],
+              "path": ["api", "huggingface", "models"]
+            }
+          }
+        },
+        {
+          "name": "Get Specific Model",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/huggingface/models/gpt2",
+              "host": ["{{base_url}}"],
+              "path": ["api", "huggingface", "models", "gpt2"]
+            }
+          }
+        },
+        {
+          "name": "Update Model",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Updated OpenAI GPT-2 language model for text generation\",\n  \"parameters\": {\n    \"max_new_tokens\": 75,\n    \"temperature\": 0.9,\n    \"do_sample\": true,\n    \"top_k\": 50\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/huggingface/models/gpt2",
+              "host": ["{{base_url}}"],
+              "path": ["api", "huggingface", "models", "gpt2"]
+            }
+          }
+        },
+        {
+          "name": "Load Model into Memory",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"force_reload\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/huggingface/models/gpt2/load",
+              "host": ["{{base_url}}"],
+              "path": ["api", "huggingface", "models", "gpt2", "load"]
+            }
+          }
+        },
+        {
+          "name": "Remove Model",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/huggingface/models/gpt2",
+              "host": ["{{base_url}}"],
+              "path": ["api", "huggingface", "models", "gpt2"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Text Generation",
+      "item": [
+        {
+          "name": "Generate Text with GPT-2",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"model_id\": \"gpt2\",\n  \"prompt\": \"The future of artificial intelligence is\",\n  \"max_new_tokens\": 50,\n  \"temperature\": 0.7,\n  \"do_sample\": true,\n  \"top_p\": 0.9\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/huggingface/generate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "huggingface", "generate"]
+            }
+          }
+        },
+        {
+          "name": "Conversational Generation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"model_id\": \"microsoft/DialoGPT-medium\",\n  \"prompt\": \"Hello, how are you today?\",\n  \"max_new_tokens\": 50,\n  \"temperature\": 0.8\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/huggingface/generate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "huggingface", "generate"]
+            }
+          }
+        },
+        {
+          "name": "Text Generation Pipeline",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"model_id\": \"gpt2\",\n  \"task\": \"text-generation\",\n  \"inputs\": \"Once upon a time in a land far away\",\n  \"max_length\": 100,\n  \"num_return_sequences\": 1,\n  \"temperature\": 0.8\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/huggingface/pipeline",
+              "host": ["{{base_url}}"],
+              "path": ["api", "huggingface", "pipeline"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "System & Cache",
+      "item": [
+        {
+          "name": "Check Dependencies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/huggingface/dependencies",
+              "host": ["{{base_url}}"],
+              "path": ["api", "huggingface", "dependencies"]
+            }
+          }
+        },
+        {
+          "name": "Get Cache Information",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/huggingface/cache",
+              "host": ["{{base_url}}"],
+              "path": ["api", "huggingface", "cache"]
+            }
+          }
+        },
+        {
+          "name": "Clear All Cache",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/huggingface/cache",
+              "host": ["{{base_url}}"],
+              "path": ["api", "huggingface", "cache"]
+            }
+          }
+        },
+        {
+          "name": "Clear Specific Model Cache",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/huggingface/cache?model_id=gpt2",
+              "host": ["{{base_url}}"],
+              "path": ["api", "huggingface", "cache"],
+              "query": [
+                {
+                  "key": "model_id",
+                  "value": "gpt2"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Usage Statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/huggingface/statistics",
+              "host": ["{{base_url}}"],
+              "path": ["api", "huggingface", "statistics"]
+            }
+          }
+        },
+        {
+          "name": "Get Model Types",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/huggingface/model-types",
+              "host": ["{{base_url}}"],
+              "path": ["api", "huggingface", "model-types"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Server Info",
+      "item": [
+        {
+          "name": "API Root - Get All Endpoints",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/",
+              "host": ["{{base_url}}"],
+              "path": [""]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

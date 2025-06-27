@@ -8,6 +8,9 @@ from flask_cors import CORS
 from config import config
 from models.model_manager import ModelManager
 from services.llm_service import LLMService
+from HuggingFace.hf_model_manager import HuggingFaceModelManager
+from HuggingFace.hf_service import HuggingFaceService
+from HuggingFace.hf_routes import create_hf_routes
 from api.routes import create_api_blueprint
 from utils.logger import APILogger
 
@@ -53,9 +56,21 @@ def create_app(config_name=None):
     
     llm_service = LLMService(app_config)
     
+    # Initialize HuggingFace services
+    hf_model_manager = HuggingFaceModelManager(
+        hf_folder=app_config.HF_FOLDER,
+        hf_models_json_file=app_config.HF_MODELS_JSON_FILE
+    )
+    
+    hf_service = HuggingFaceService(app_config, hf_model_manager)
+    
     # Register blueprints
     api_blueprint = create_api_blueprint(app_config, model_manager, llm_service)
     app.register_blueprint(api_blueprint)
+    
+    # Register HuggingFace blueprint
+    hf_blueprint = create_hf_routes(hf_model_manager, hf_service)
+    app.register_blueprint(hf_blueprint)
     
     # Root endpoint with API documentation
     @app.route('/', methods=['GET'])
@@ -69,13 +84,28 @@ def create_app(config_name=None):
             "api_prefix": app_config.API_PREFIX,
             "endpoints": {
                 "models": {
-                    "GET /api/v1/models": "List all models",
-                    "POST /api/v1/models": "Upload a new model",
-                    "DELETE /api/v1/models/<name>": "Delete a model",
+                    "GET /api/v1/models": "List all GGUF models",
+                    "POST /api/v1/models": "Upload a new GGUF model",
+                    "DELETE /api/v1/models/<n>": "Delete a GGUF model",
                     "POST /api/v1/models/sync": "Sync models with filesystem"
                 },
+                "huggingface": {
+                    "GET /api/huggingface/models": "List all HuggingFace models",
+                    "POST /api/huggingface/models": "Add a new HuggingFace model",
+                    "GET /api/huggingface/models/<model_id>": "Get specific HuggingFace model",
+                    "PUT /api/huggingface/models/<model_id>": "Update HuggingFace model",
+                    "DELETE /api/huggingface/models/<model_id>": "Remove HuggingFace model",
+                    "POST /api/huggingface/models/<model_id>/load": "Load HuggingFace model into memory",
+                    "POST /api/huggingface/generate": "Generate text using HuggingFace model",
+                    "POST /api/huggingface/pipeline": "Generate using HuggingFace pipeline",
+                    "GET /api/huggingface/cache": "Get cache information",
+                    "DELETE /api/huggingface/cache": "Clear model cache",
+                    "GET /api/huggingface/statistics": "Get usage statistics",
+                    "GET /api/huggingface/model-types": "Get available model types",
+                    "GET /api/huggingface/dependencies": "Check required dependencies"
+                },
                 "generation": {
-                    "POST /api/v1/generate": "Generate text using a model"
+                    "POST /api/v1/generate": "Generate text using a GGUF model"
                 },
                 "system": {
                     "GET /api/v1/health": "Health check",
@@ -87,12 +117,15 @@ def create_app(config_name=None):
                 "base_url": "http://localhost:5000",
                 "content_type": "application/json",
                 "example_requests": {
-                    "upload_model": "POST /api/v1/models (with file in form-data)",
+                    "upload_gguf_model": "POST /api/v1/models (with file in form-data)",
+                    "add_hf_model": "POST /api/huggingface/models {\"model_id\": \"microsoft/DialoGPT-medium\", \"name\": \"DialoGPT Medium\", \"model_type\": \"conversational\"}",
                     "list_models": "GET /api/v1/models",
-                    "generate_text": "POST /api/v1/generate {\"question\": \"Hello\", \"model_name\": \"model-name\"}"
+                    "list_hf_models": "GET /api/huggingface/models",
+                    "generate_text_gguf": "POST /api/v1/generate {\"question\": \"Hello\", \"model_name\": \"model-name\"}",
+                    "generate_text_hf": "POST /api/huggingface/generate {\"model_id\": \"microsoft/DialoGPT-medium\", \"prompt\": \"Hello, how are you?\"}"
                 }
             },
-            "migration_note": "All endpoints are now under /api/v1/. Legacy routes have been removed for cleaner architecture."
+            "migration_note": "All endpoints are now under /api/v1/ for GGUF models and /api/huggingface/ for HuggingFace models. Legacy routes have been removed for cleaner architecture."
         })
     
     return app
