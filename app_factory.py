@@ -11,6 +11,7 @@ from services.llm_service import LLMService
 from HuggingFace.hf_model_manager import HuggingFaceModelManager
 from HuggingFace.hf_service import HuggingFaceService
 from HuggingFace.hf_routes import create_hf_routes
+from DeepSeekLLM.deepseek_routes import create_deepseek_routes
 from api.routes import create_api_blueprint
 from utils.logger import APILogger
 
@@ -72,6 +73,10 @@ def create_app(config_name=None):
     hf_blueprint = create_hf_routes(hf_model_manager, hf_service)
     app.register_blueprint(hf_blueprint)
     
+    # Register DeepSeek blueprint
+    deepseek_blueprint = create_deepseek_routes(app_config)
+    app.register_blueprint(deepseek_blueprint)
+    
     # Root endpoint with API documentation
     @app.route('/', methods=['GET'])
     def api_info():
@@ -104,6 +109,13 @@ def create_app(config_name=None):
                     "GET /api/huggingface/model-types": "Get available model types",
                     "GET /api/huggingface/dependencies": "Check required dependencies"
                 },
+                "deepseek": {
+                    "GET /api/deepseek/models": "List all DeepSeek models",
+                    "GET /api/deepseek/models/<model_name>": "Get specific DeepSeek model info",
+                    "POST /api/deepseek/generate": "Generate text using DeepSeek model",
+                    "GET /api/deepseek/health": "DeepSeek service health check",
+                    "POST /api/deepseek/test": "Test DeepSeek generation with defaults"
+                },
                 "generation": {
                     "POST /api/v1/generate": "Generate text using a GGUF model"
                 },
@@ -121,11 +133,14 @@ def create_app(config_name=None):
                     "add_hf_model": "POST /api/huggingface/models {\"model_id\": \"microsoft/DialoGPT-medium\", \"name\": \"DialoGPT Medium\", \"model_type\": \"conversational\"}",
                     "list_models": "GET /api/v1/models",
                     "list_hf_models": "GET /api/huggingface/models",
+                    "list_deepseek_models": "GET /api/deepseek/models",
                     "generate_text_gguf": "POST /api/v1/generate {\"question\": \"Hello\", \"model_name\": \"model-name\"}",
-                    "generate_text_hf": "POST /api/huggingface/generate {\"model_id\": \"microsoft/DialoGPT-medium\", \"prompt\": \"Hello, how are you?\"}"
+                    "generate_text_hf": "POST /api/huggingface/generate {\"model_id\": \"microsoft/DialoGPT-medium\", \"prompt\": \"Hello, how are you?\"}",
+                    "generate_text_deepseek": "POST /api/deepseek/generate {\"model_name\": \"DeepSeek-R1-q2_k.gguf\", \"prompt\": \"Hello, how are you?\", \"max_tokens\": 200, \"temperature\": 0.7}",
+                    "test_deepseek": "POST /api/deepseek/test {\"prompt\": \"What is AI?\"}"
                 }
             },
-            "migration_note": "All endpoints are now under /api/v1/ for GGUF models and /api/huggingface/ for HuggingFace models. Legacy routes have been removed for cleaner architecture."
+            "migration_note": "All endpoints are now under /api/v1/ for GGUF models, /api/huggingface/ for HuggingFace models, and /api/deepseek/ for DeepSeek models. Legacy routes have been removed for cleaner architecture."
         })
     
     return app

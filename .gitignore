@@ -10,6 +10,7 @@ __pycache__/
 .Python
 build/
 models/
+DeepSeekLLM/model
 logs/
 develop-eggs/
 dist/
