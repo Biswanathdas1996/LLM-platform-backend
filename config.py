@@ -27,6 +27,16 @@ class Config:
     DEFAULT_TEMPERATURE = float(os.environ.get('DEFAULT_TEMPERATURE', 0.6))
     DEFAULT_VERBOSE = os.environ.get('DEFAULT_VERBOSE', 'True').lower() == 'true'
     
+    # DeepSeek specific settings for large context handling
+    DEEPSEEK_MAX_CONTEXT = int(os.environ.get('DEEPSEEK_MAX_CONTEXT', 32768))  # Maximum context size
+    DEEPSEEK_DEFAULT_CONTEXT = int(os.environ.get('DEEPSEEK_DEFAULT_CONTEXT', 8192))  # Default context size
+    DEEPSEEK_CHUNK_SIZE = int(os.environ.get('DEEPSEEK_CHUNK_SIZE', 4096))  # Chunk size for large inputs
+    DEEPSEEK_OVERLAP_SIZE = int(os.environ.get('DEEPSEEK_OVERLAP_SIZE', 256))  # Overlap between chunks
+    DEEPSEEK_MAX_THREADS = int(os.environ.get('DEEPSEEK_MAX_THREADS', 16))  # Maximum CPU threads
+    DEEPSEEK_USE_MMAP = os.environ.get('DEEPSEEK_USE_MMAP', 'True').lower() == 'true'  # Use memory mapping
+    DEEPSEEK_STREAMING_ENABLED = os.environ.get('DEEPSEEK_STREAMING_ENABLED', 'True').lower() == 'true'  # Enable streaming
+    DEEPSEEK_CACHE_ENABLED = os.environ.get('DEEPSEEK_CACHE_ENABLED', 'True').lower() == 'true'  # Enable model caching
+    
     # API settings
     CORS_ORIGINS = os.environ.get('CORS_ORIGINS', '*')
     API_PREFIX = os.environ.get('API_PREFIX', '/api/v1')
