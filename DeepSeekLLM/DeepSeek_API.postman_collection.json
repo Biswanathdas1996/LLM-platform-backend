@@ -1,0 +1,560 @@
+{
+  "info": {
+    "_postman_id": "deepseek-api-collection",
+    "name": "DeepSeek LLM API",
+    "description": "Collection for testing DeepSeek LLM API endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response has success field\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('success');",
+              "});",
+              "",
+              "pm.test(\"Service is healthy\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.success).to.eql(true);",
+              "    pm.expect(jsonData.status).to.eql('healthy');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/deepseek/health",
+          "host": ["{{base_url}}"],
+          "path": ["api", "deepseek", "health"]
+        },
+        "description": "Check the health status of the DeepSeek service"
+      },
+      "response": []
+    },
+    {
+      "name": "List Models",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response contains models array\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('models');",
+              "    pm.expect(jsonData.models).to.be.an('array');",
+              "});",
+              "",
+              "pm.test(\"Models have required properties\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    if (jsonData.models.length > 0) {",
+              "        var model = jsonData.models[0];",
+              "        pm.expect(model).to.have.property('name');",
+              "        pm.expect(model).to.have.property('path');",
+              "        pm.expect(model).to.have.property('size');",
+              "        pm.expect(model).to.have.property('type');",
+              "    }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/deepseek/models",
+          "host": ["{{base_url}}"],
+          "path": ["api", "deepseek", "models"]
+        },
+        "description": "Get list of all available DeepSeek models"
+      },
+      "response": []
+    },
+    {
+      "name": "Get Model Info",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 or 404\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+              "});",
+              "",
+              "pm.test(\"Response has success field\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('success');",
+              "});",
+              "",
+              "if (pm.response.code === 200) {",
+              "    pm.test(\"Model info contains required fields\", function () {",
+              "        var jsonData = pm.response.json();",
+              "        pm.expect(jsonData).to.have.property('name');",
+              "        pm.expect(jsonData).to.have.property('path');",
+              "        pm.expect(jsonData).to.have.property('size');",
+              "    });",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/deepseek/models/{{model_name}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "deepseek", "models", "{{model_name}}"]
+        },
+        "description": "Get information about a specific DeepSeek model"
+      },
+      "response": []
+    },
+    {
+      "name": "Generate Text - Basic",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 or 500\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 500]);",
+              "});",
+              "",
+              "pm.test(\"Response has success field\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('success');",
+              "});",
+              "",
+              "if (pm.response.code === 200) {",
+              "    pm.test(\"Successful generation contains text\", function () {",
+              "        var jsonData = pm.response.json();",
+              "        if (jsonData.success) {",
+              "            pm.expect(jsonData).to.have.property('generated_text');",
+              "            pm.expect(jsonData.generated_text).to.be.a('string');",
+              "        }",
+              "    });",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"model_name\": \"{{model_name}}\",\n  \"prompt\": \"Hello, how are you today?\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/deepseek/generate",
+          "host": ["{{base_url}}"],
+          "path": ["api", "deepseek", "generate"]
+        },
+        "description": "Generate text using basic parameters"
+      },
+      "response": []
+    },
+    {
+      "name": "Generate Text - Advanced",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 or 500\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 500]);",
+              "});",
+              "",
+              "pm.test(\"Response has success field\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('success');",
+              "});",
+              "",
+              "if (pm.response.code === 200 && pm.response.json().success) {",
+              "    pm.test(\"Response contains parameters used\", function () {",
+              "        var jsonData = pm.response.json();",
+              "        pm.expect(jsonData).to.have.property('parameters');",
+              "        pm.expect(jsonData.parameters).to.have.property('max_tokens');",
+              "        pm.expect(jsonData.parameters).to.have.property('temperature');",
+              "    });",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"model_name\": \"{{model_name}}\",\n  \"prompt\": \"Write a short story about a robot learning to paint.\",\n  \"max_tokens\": 200,\n  \"temperature\": 0.8,\n  \"n_ctx\": 2048,\n  \"n_threads\": 8,\n  \"use_mlock\": true,\n  \"stop\": [\"</s>\", \"<|end|>\", \"<|endoftext|>\"]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/deepseek/generate",
+          "host": ["{{base_url}}"],
+          "path": ["api", "deepseek", "generate"]
+        },
+        "description": "Generate text using advanced parameters"
+      },
+      "response": []
+    },
+    {
+      "name": "Generate Text - Creative Writing",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 or 500\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 500]);",
+              "});",
+              "",
+              "pm.test(\"Response has success field\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('success');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"model_name\": \"{{model_name}}\",\n  \"prompt\": \"Write a haiku about artificial intelligence and the future.\",\n  \"max_tokens\": 100,\n  \"temperature\": 0.9\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/deepseek/generate",
+          "host": ["{{base_url}}"],
+          "path": ["api", "deepseek", "generate"]
+        },
+        "description": "Generate creative text with higher temperature"
+      },
+      "response": []
+    },
+    {
+      "name": "Generate Text - Factual Query",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 or 500\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 500]);",
+              "});",
+              "",
+              "pm.test(\"Response has success field\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('success');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"model_name\": \"{{model_name}}\",\n  \"prompt\": \"Explain the concept of machine learning in simple terms.\",\n  \"max_tokens\": 250,\n  \"temperature\": 0.3\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/deepseek/generate",
+          "host": ["{{base_url}}"],
+          "path": ["api", "deepseek", "generate"]
+        },
+        "description": "Generate factual response with lower temperature"
+      },
+      "response": []
+    },
+    {
+      "name": "Quick Test - Default",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 or 500\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 500]);",
+              "});",
+              "",
+              "pm.test(\"Response has test field\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('test');",
+              "    pm.expect(jsonData.test).to.eql(true);",
+              "});",
+              "",
+              "pm.test(\"Response shows default parameters\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('default_model');",
+              "    pm.expect(jsonData).to.have.property('default_prompt');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/deepseek/test",
+          "host": ["{{base_url}}"],
+          "path": ["api", "deepseek", "test"]
+        },
+        "description": "Quick test with default parameters"
+      },
+      "response": []
+    },
+    {
+      "name": "Quick Test - Custom Prompt",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 or 500\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 500]);",
+              "});",
+              "",
+              "pm.test(\"Response has test field\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('test');",
+              "    pm.expect(jsonData.test).to.eql(true);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"prompt\": \"What are the benefits of renewable energy?\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/deepseek/test",
+          "host": ["{{base_url}}"],
+          "path": ["api", "deepseek", "test"]
+        },
+        "description": "Quick test with custom prompt"
+      },
+      "response": []
+    },
+    {
+      "name": "Error Test - Missing Model Name",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 400\", function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test(\"Error message mentions model_name\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.success).to.eql(false);",
+              "    pm.expect(jsonData.error).to.include('model_name');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"prompt\": \"Hello, world!\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/deepseek/generate",
+          "host": ["{{base_url}}"],
+          "path": ["api", "deepseek", "generate"]
+        },
+        "description": "Test error handling for missing model_name"
+      },
+      "response": []
+    },
+    {
+      "name": "Error Test - Missing Prompt",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 400\", function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test(\"Error message mentions prompt\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.success).to.eql(false);",
+              "    pm.expect(jsonData.error).to.include('prompt');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"model_name\": \"{{model_name}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/deepseek/generate",
+          "host": ["{{base_url}}"],
+          "path": ["api", "deepseek", "generate"]
+        },
+        "description": "Test error handling for missing prompt"
+      },
+      "response": []
+    },
+    {
+      "name": "Error Test - Invalid Parameters",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 400\", function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test(\"Error response indicates parameter validation\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.success).to.eql(false);",
+              "    pm.expect(jsonData.error).to.be.a('string');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"model_name\": \"{{model_name}}\",\n  \"prompt\": \"Hello\",\n  \"max_tokens\": -1,\n  \"temperature\": -0.5\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/deepseek/generate",
+          "host": ["{{base_url}}"],
+          "path": ["api", "deepseek", "generate"]
+        },
+        "description": "Test error handling for invalid parameters"
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "model_name",
+      "value": "DeepSeek-R1-q2_k.gguf",
+      "type": "string"
+    }
+  ]
+}
