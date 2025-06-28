@@ -1,8 +1,9 @@
 """
-DeepSeek LLM Service for API integration.
+DeepSeek LLM Service for API integration with concurrency support.
 """
 import os
 import logging
+import asyncio
 from typing import Dict, Any, Optional, List
 from threading import Lock
 from .services import generate_text
@@ -57,7 +58,7 @@ class DeepSeekService:
         use_mlock: bool = True,
         stop: Optional[List[str]] = None
     ) -> Dict[str, Any]:
-        """Generate text using a DeepSeek model."""
+        """Generate text using a DeepSeek model (thread-safe)."""
         
         try:
             # Find the model file
@@ -72,17 +73,19 @@ class DeepSeekService:
             logger.info(f"Generating text with DeepSeek model: {model_name}")
             logger.info(f"Prompt: {prompt[:100]}..." if len(prompt) > 100 else f"Prompt: {prompt}")
             
-            # Generate text using the services module
-            generated_text = generate_text(
-                model_path=model_path,
-                prompt=prompt,
-                max_tokens=max_tokens,
-                temperature=temperature,
-                n_ctx=n_ctx,
-                n_threads=n_threads,
-                use_mlock=use_mlock,
-                stop=stop
-            )
+            # Use cache lock to ensure thread safety
+            with self.cache_lock:
+                # Generate text using the services module
+                generated_text = generate_text(
+                    model_path=model_path,
+                    prompt=prompt,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    n_ctx=n_ctx,
+                    n_threads=n_threads,
+                    use_mlock=use_mlock,
+                    stop=stop
+                )
             
             return {
                 "success": True,
@@ -99,13 +102,41 @@ class DeepSeekService:
             }
             
         except Exception as e:
-            logger.error(f"Error generating text with DeepSeek: {e}")
+            logger.error(f"Error generating DeepSeek response: {e}")
             return {
                 "success": False,
                 "error": str(e),
                 "model": model_name,
                 "prompt": prompt
             }
+    
+    async def generate_response_async(
+        self,
+        model_name: str,
+        prompt: str,
+        max_tokens: int = 200,
+        temperature: float = 0.7,
+        n_ctx: int = 2048,
+        n_threads: int = 8,
+        use_mlock: bool = True,
+        stop: Optional[List[str]] = None
+    ) -> Dict[str, Any]:
+        """Async wrapper for generate_response to avoid blocking."""
+        
+        # Run the synchronous generation in a thread pool
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(
+            None,
+            self.generate_response,
+            model_name,
+            prompt,
+            max_tokens,
+            temperature,
+            n_ctx,
+            n_threads,
+            use_mlock,
+            stop
+        )
     
     def _get_model_path(self, model_name: str) -> Optional[str]:
         """Get the full path to a model file."""

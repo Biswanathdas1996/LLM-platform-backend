@@ -1,12 +1,14 @@
 """
-Route handlers for both API and legacy endpoints.
+Route handlers for both API and legacy endpoints with concurrency support.
 This module contains the business logic that can be shared between different route implementations.
 """
 import asyncio
 import logging
-from flask import request, jsonify
+import time
+from flask import request, jsonify, current_app
 from werkzeug.utils import secure_filename
 from utils.logger import log_endpoint, log_custom_event
+from .async_routes import async_route
 
 logger = logging.getLogger(__name__)
 
@@ -166,8 +168,10 @@ class RouteHandlers:
             return jsonify({"error": f"Failed to sync models: {str(e)}"}), 500
     
     @log_endpoint("generate_response")
-    def generate_response(self):
-        """Handle text generation requests."""
+    @log_endpoint("generate_response")
+    @async_route
+    async def generate_response(self):
+        """Handle text generation requests with async processing."""
         try:
             data = request.get_json()
             
@@ -202,73 +206,65 @@ class RouteHandlers:
             # Remove None values
             llm_params = {k: v for k, v in llm_params.items() if v is not None}
             
-            # Run the async function in an event loop
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                # Log generation request
+            # Log generation request
+            log_custom_event(
+                "text_generation_start",
+                f"Starting text generation with model: {model_name}",
+                {
+                    "model_name": model_name,
+                    "question_length": len(question),
+                    "llm_params": llm_params
+                }
+            )
+            
+            # Use async service method
+            result = await self.llm_service.generate_response(
+                question=question,
+                model_name=model_name,
+                model_path=model_path,
+                template=template,
+                **llm_params
+            )
+            
+            if result.get('success'):
+                # Log successful generation
                 log_custom_event(
-                    "text_generation_start",
-                    f"Starting text generation with model: {model_name}",
+                    "text_generation_success",
+                    f"Text generation completed successfully with model: {model_name}",
                     {
                         "model_name": model_name,
-                        "question_length": len(question),
-                        "llm_params": llm_params
+                        "response_length": len(str(result.get('response', ''))),
+                        "processing_time": result.get('processing_time'),
                     }
                 )
-                
-                result = loop.run_until_complete(
-                    self.llm_service.generate_response(
-                        question=question,
-                        model_name=model_name,
-                        model_path=model_path,
-                        template=template,
-                        **llm_params
-                    )
+                return jsonify(result), 200
+            else:
+                # Log generation failure
+                log_custom_event(
+                    "text_generation_failure",
+                    f"Text generation failed with model: {model_name}",
+                    {
+                        "model_name": model_name,
+                        "error": result.get('error')
+                    }
                 )
-                
-                if result.get('success'):
-                    # Log successful generation
-                    log_custom_event(
-                        "text_generation_success",
-                        f"Text generation completed successfully with model: {model_name}",
-                        {
-                            "model_name": model_name,
-                            "response_length": len(result.get('response', '')),
-                            "generation_time": result.get('generation_time'),
-                        }
-                    )
-                    return jsonify(result), 200
-                else:
-                    # Log generation failure
-                    log_custom_event(
-                        "text_generation_failure",
-                        f"Text generation failed with model: {model_name}",
-                        {
-                            "model_name": model_name,
-                            "error": result.get('error')
-                        }
-                    )
-                    return jsonify(result), 500
-                    
-            finally:
-                loop.close()
+                return jsonify(result), 500
                 
         except Exception as e:
             log_custom_event(
                 "text_generation_error",
-                f"Text generation error with model {model_name}: {str(e)}",
+                f"Text generation error: {str(e)}",
                 {
-                    "model_name": model_name,
-                    "question": question[:100] + "..." if len(question) > 100 else question,
+                    "model_name": model_name if 'model_name' in locals() else 'unknown',
+                    "question": question[:100] + "..." if 'question' in locals() and len(question) > 100 else question if 'question' in locals() else 'unknown',
                     "error_type": type(e).__name__,
                     "error_message": str(e)
                 }
             )
             logger.error(f"Error generating response: {e}")
             return jsonify({
-                "error": f"Failed to generate response: {str(e)}",
-                "success": False
+                "success": False,
+                "error": str(e)
             }), 500
     
     def health_check(self):
@@ -332,5 +328,110 @@ class RouteHandlers:
         except Exception as e:
             logger.error(f"Error clearing logs: {e}")
             return jsonify({"error": f"Failed to clear logs: {str(e)}"}), 500
+    
+    @log_endpoint("get_service_stats")
+    def get_service_stats(self):
+        """Get comprehensive service statistics."""
+        try:
+            stats = self.llm_service.get_service_stats()
+            return jsonify({
+                "success": True,
+                "stats": stats,
+                "timestamp": time.time()
+            }), 200
+        except Exception as e:
+            logger.error(f"Error getting service stats: {e}")
+            return jsonify({
+                "success": False,
+                "error": str(e)
+            }), 500
+    
+    @log_endpoint("get_concurrency_stats")
+    def get_concurrency_stats(self):
+        """Get concurrency manager statistics."""
+        try:
+            concurrency_manager = getattr(current_app, 'concurrency_manager', None)
+            if concurrency_manager is None:
+                return jsonify({
+                    "success": False,
+                    "error": "Concurrency manager not available"
+                }), 503
+            
+            stats = concurrency_manager.get_stats()
+            return jsonify({
+                "success": True,
+                "concurrency_stats": stats,
+                "timestamp": time.time()
+            }), 200
+        except Exception as e:
+            logger.error(f"Error getting concurrency stats: {e}")
+            return jsonify({
+                "success": False,
+                "error": str(e)
+            }), 500
+    
+    @log_endpoint("get_system_health")
+    def get_system_health(self):
+        """Get comprehensive system health information."""
+        try:
+            import psutil
+            import os
+            
+            # Get system info
+            cpu_percent = psutil.cpu_percent(interval=1)
+            memory = psutil.virtual_memory()
+            disk = psutil.disk_usage('/')
+            
+            # Get service stats
+            service_stats = self.llm_service.get_service_stats()
+            
+            # Get concurrency stats
+            concurrency_manager = getattr(current_app, 'concurrency_manager', None)
+            concurrency_stats = concurrency_manager.get_stats() if concurrency_manager else {}
+            
+            health_data = {
+                "success": True,
+                "system": {
+                    "cpu_percent": cpu_percent,
+                    "memory": {
+                        "total": memory.total,
+                        "available": memory.available,
+                        "percent": memory.percent,
+                        "used": memory.used
+                    },
+                    "disk": {
+                        "total": disk.total,
+                        "free": disk.free,
+                        "used": disk.used,
+                        "percent": (disk.used / disk.total) * 100
+                    },
+                    "process_id": os.getpid()
+                },
+                "service": service_stats,
+                "concurrency": concurrency_stats,
+                "models": {
+                    "loaded_models": len(self.llm_service.get_cached_models()),
+                    "available_models": len(self.model_manager.get_models())
+                }
+            }
+            
+            return jsonify(health_data), 200
+            
+        except ImportError:
+            # psutil not available, return basic health
+            return jsonify({
+                "success": True,
+                "message": "psutil not available for detailed system stats",
+                "basic_health": {
+                    "service_running": True,
+                    "models_available": len(self.model_manager.get_models())
+                }
+            }), 200
+        except Exception as e:
+            logger.error(f"Error getting system health: {e}")
+            return jsonify({
+                "success": False,
+                "error": str(e)
+            }), 500
 
 

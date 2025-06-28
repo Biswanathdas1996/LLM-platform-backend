@@ -1,5 +1,5 @@
 """
-Application factory and initialization.
+Application factory and initialization with concurrency support.
 """
 import os
 import logging
@@ -8,6 +8,7 @@ from flask_cors import CORS
 from config import config
 from models.model_manager import ModelManager
 from services.llm_service import LLMService
+from services.concurrency_manager import ConcurrencyManager
 from DeepSeekLLM.deepseek_routes import create_deepseek_routes
 from api.routes import create_api_blueprint
 from utils.logger import APILogger
@@ -54,6 +55,14 @@ def create_app(config_name=None):
     
     llm_service = LLMService(app_config)
     
+    # Initialize concurrency manager
+    concurrency_manager = ConcurrencyManager(app_config)
+    
+    # Store services in app context for access in routes
+    app.model_manager = model_manager
+    app.llm_service = llm_service
+    app.concurrency_manager = concurrency_manager
+    
 
     # Register blueprints
     api_blueprint = create_api_blueprint(app_config, model_manager, llm_service)
@@ -95,7 +104,9 @@ def create_app(config_name=None):
                 "system": {
                     "GET /api/v1/health": "Health check",
                     "POST /api/v1/cache/clear": "Clear model cache",
-                    "GET /api/v1/cache/status": "Get cache status"
+                    "GET /api/v1/cache/status": "Get cache status",
+                    "GET /api/v1/stats": "Get service statistics",
+                    "GET /api/v1/stats/concurrency": "Get concurrency statistics"
                 }
             },
             "documentation": {
@@ -111,5 +122,12 @@ def create_app(config_name=None):
                 }
             },
         })
+    
+    # Cleanup function for graceful shutdown
+    @app.teardown_appcontext
+    def shutdown_services(error):
+        """Clean up services on app shutdown."""
+        if hasattr(app, 'concurrency_manager'):
+            app.concurrency_manager.shutdown(wait=False)
     
     return app

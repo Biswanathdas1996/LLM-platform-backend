@@ -46,6 +46,18 @@ class Config:
     LOG_MAX_BYTES = int(os.environ.get('LOG_MAX_BYTES', 10 * 1024 * 1024))  # 10MB
     LOG_BACKUP_COUNT = int(os.environ.get('LOG_BACKUP_COUNT', 5))
     LOG_API_CALLS = os.environ.get('LOG_API_CALLS', 'True').lower() == 'true'
+    
+    # Concurrency settings
+    MAX_CONCURRENT_REQUESTS = int(os.environ.get('MAX_CONCURRENT_REQUESTS', 10))
+    MAX_WORKERS = int(os.environ.get('MAX_WORKERS', 4))
+    MODEL_POOL_SIZE = int(os.environ.get('MODEL_POOL_SIZE', 3))
+    REQUEST_TIMEOUT = int(os.environ.get('REQUEST_TIMEOUT', 300))  # 5 minutes
+    QUEUE_TIMEOUT = int(os.environ.get('QUEUE_TIMEOUT', 30))  # 30 seconds wait for queue
+    
+    # Performance settings
+    ENABLE_MODEL_PRELOADING = os.environ.get('ENABLE_MODEL_PRELOADING', 'False').lower() == 'true'
+    ENABLE_REQUEST_QUEUE = os.environ.get('ENABLE_REQUEST_QUEUE', 'True').lower() == 'true'
+    ENABLE_ASYNC_PROCESSING = os.environ.get('ENABLE_ASYNC_PROCESSING', 'True').lower() == 'true'
 
 class DevelopmentConfig(Config):
     """Development configuration."""
